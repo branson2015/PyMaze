@@ -79,7 +79,7 @@ def solve(cls):
 class Board(GraphViz):
     def __init__(self, windowSize, numTiles, wallSize):
         super().__init__(windowSize)
-        self._tileSize = (self.width/numTiles[0], self.height/numTiles[1])
+        self._tileSize = (self.width/numTiles[0] - wallSize[0]/numTiles[0], self.height/numTiles[1] - wallSize[1]/numTiles[0])
         self._numTiles = numTiles
         self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
         self._wallSize = wallSize
@@ -88,11 +88,20 @@ class Board(GraphViz):
 
         #self.generate()
 
-    def genTile(self, pos, paths):
-        rect = pygame.Rect((pos[0]*self._tileSize[0], pos[1]*self._tileSize[1]), self._innerSize)
+    def genTile(self, pos, paths=[]):
+        rect = pygame.Rect((self._wallSize[0] + pos[0]*self._tileSize[0], self._wallSize[1] + pos[1]*self._tileSize[1]), self._innerSize)
+        rec2 = None
         self._display_surf.fill(Color.white.value, rect=rect)
         for path in paths:
-            pass
+            if path == Direction.up:
+                rec2 = rect.move(0, -self._wallSize[1]-1)
+            elif path == Direction.right:
+                rec2 = rect.move(self._wallSize[0]+1, 0)
+            elif path == Direction.down:
+                rec2 = rect.move(0, self._wallSize[1]+1)
+            elif path == Direction.left:
+                rec2 = rect.move(-self._wallSize[0]-1, 0)
+            self._display_surf.fill(Color.white.value, rect=rec2)
 
     
     def generate(self):
@@ -117,7 +126,7 @@ class Maze(Board, Graph):
 
         for i in range(numTiles[0]):
             for j in range(numTiles[1]):
-                self.genTile((i,j), [Direction.up.value])
+                self.genTile((i,j), [])
 
     def on_render(self):
         pygame.display.update()
