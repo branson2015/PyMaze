@@ -2,6 +2,7 @@ import pygame
 from pygame.locals import *
 from functools import wraps
 from enum import Enum
+from random import random
 
 class Color(Enum):
     white = (255,255,255)
@@ -21,39 +22,31 @@ class GraphViz:
         self._display_surf = pygame.display.set_mode(self.size, pygame.HWSURFACE | pygame.DOUBLEBUF)
         self._running = True
 
-    def on_event(self, event):
+    def super_event(self, event):
         if event.type == pygame.QUIT:
             self._running = False
+        else:
+            self.on_event(event)
+    
+    def on_event(self, event):
+        pass
     
     def on_loop(self):
-        pass
+        for event in pygame.event.get():
+            self.super_event(event)
+        self.on_render()
 
     def on_render(self):
-        pass
+        pygame.display.update()
 
     def on_cleanup(self):
         pygame.quit()
 
     def start(self):
         while(self._running):
-            for event in pygame.event.get():
-                self.on_event(event)
             self.on_loop()
-            self.on_render()
         self.on_cleanup()
 
-
-
-#Cell: contains both empty space AND walls:
-'''
-    # # # #
-    # _ W # 
-    # W W #
-    # # # # 
-
-    W = wall, size is wallSize
-    _ = blank cell space, size is windowSize/numTiles - wallSize
-'''
 
 #decorator to make incorporating graph algorithms into the class easier
 def add_method(cls, fnName):
@@ -84,10 +77,6 @@ class Board(GraphViz):
         self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
         self._wallSize = wallSize
 
-        self.edges = []
-
-        #self.generate()
-
     def genTile(self, pos, paths=[]):
         rect = pygame.Rect((self._wallSize[0] + pos[0]*self._tileSize[0], self._wallSize[1] + pos[1]*self._tileSize[1]), self._innerSize)
         rec2 = None
@@ -103,15 +92,14 @@ class Board(GraphViz):
                 rec2 = rect.move(-self._wallSize[0]-1, 0)
             self._display_surf.fill(Color.white.value, rect=rec2)
 
-    
+    def on_event(self, event):
+        pass
     def generate(self):
         pass
     def solve(self):
         pass
-    def on_render(self):
-        pass
-    def draw(self):
-        pass
+
+
 
 #graph class, to hold nodes and edges
 class Graph:
@@ -121,28 +109,36 @@ class Graph:
 
 #Maze class, brings together graph and Board
 class Maze(Board, Graph):
+    class State(Enum):
+        init = 0
+        generated = 1
+        solved = 2
+
     def __init__(self, windowSize, numTiles, wallSize):
         super().__init__(windowSize, numTiles, wallSize)
+        self._state = self.State.init
+    
+    def on_event(self, event):
+        if(event.type == pygame.KEYDOWN):
+            if event.key == pygame.K_SPACE:
+                if self._state == self.State.init:
+                    self.generate()
+                    self._state = self.State.generated
+                elif self._state == self.State.generated:
+                    self.solve()
+                    self._state = self.State.solved
+                elif self._state == self.State.solved:
+                    pass
 
-        for i in range(numTiles[0]):
-            for j in range(numTiles[1]):
-                self.genTile((i,j), [])
 
-    def on_render(self):
-        pygame.display.update()
-    
-if __name__ == "__main__":
-    app = Maze((800, 600), (13,10), (5,5))
-    app.start()
-    
-    
     
 ###--- algorithms section ---###
-    
-    
-    
+
+
 @generate(Maze)
 def DFSGen(self):
+    print("generating")
+
     self._nodes = self._numTiles[0]*self._numTiles[1]
     self._edges = []
     visited = [False for i in range(self._nodes)]  
@@ -153,16 +149,24 @@ def DFSGen(self):
     while(len(stack)):
         s = stack[-1]  
         stack.pop() 
+        
+        neighbors = filter(lambda s: visited[s], [s + self._numTiles[0], s+1, s - self._numTiles[0], s-1]) #todo, need to bound this somehow
+        l = len(neighbors)
+        
+        if l > 0:
+            stack.append(s)
+        
+        ns = neighbors[random()%l]
 
-        if (not visited[s]):  
-            visited[s] = True 
+        #todo: knock down wall between ns and s
 
-        for node in self._edges[s]:  #need to modify this part to make DFS graph generation work
-            if (not visited[node]):  
-                stack.append(node)  
+        visited[ns] = True
+        stack.append(ns)
 
 @solve(Maze)
 def DFS(self):
+    print("solving")
+
     visited = [False for i in range(self._nodes)]  
     stack = [] 
 
@@ -178,3 +182,15 @@ def DFS(self):
         for node in self._edges[s]:  
             if (not visited[node]):  
                 stack.append(node)  
+                
+
+
+
+
+
+
+
+
+if __name__ == "__main__":
+    app = Maze((800, 600), (13,10), (5,5)) #add in border?
+    app.start()
