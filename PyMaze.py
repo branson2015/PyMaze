@@ -92,7 +92,6 @@ class Board(GraphViz):
             elif path == Direction.left:
                 rec2 = rect.move(-self._wallSize[0]-1, 0)
             self._display_surf.fill(Color.white.value, rect=rec2)
-        self.render()
         time.sleep(timeout/1000)
     
     def getNeighbors(self, s):
@@ -120,34 +119,77 @@ class Board(GraphViz):
     def solve(self):
         pass
 
+class Graph(object):
+    def __init__(self, graph_dict=None):
+        if graph_dict == None:
+            graph_dict = {}
+        self._graph_dict = graph_dict
 
+    def vertices(self):
+        return list(self._graph_dict.keys())
 
-#graph class, to hold nodes and edges
-class Graph:
-    def __init__(self, nodes = None, edges = None):
-        self._nodes = nodes
-        self._edges = edges
+    def edges(self):
+        return self._generate_edges()
+
+    def add_vertex(self, vertex):
+        if vertex not in self._graph_dict:
+            self._graph_dict[vertex] = []
+
+    def add_edge(self, edge):
+        edge = set(edge)
+        (vertex1, vertex2) = tuple(edge)
+        if vertex1 in self._graph_dict:
+            self._graph_dict[vertex1].append(vertex2)
+        else:
+            self._graph_dict[vertex1] = [vertex2]
+        if vertex2 in self._graph_dict:
+            self._graph_dict[vertex2].append(vertex1)
+        else:
+            self._graph_dict[vertex2] = [vertex1]
+
+    def _generate_edges(self):
+        edges = []
+        for vertex in self._graph_dict:
+            for neighbour in self._graph_dict[vertex]:
+                if {neighbour, vertex} not in edges:
+                    edges.append({vertex, neighbour})
+        return edges
 
 #Maze class, brings together graph and Board
 class Maze(Board, Graph):
     class State(Enum):
         init = 0
-        generated = 1
-        solved = 2
+        generating = 1
+        generated = 2
+        solving = 3
+        solved = 4
+        
 
     def __init__(self, windowSize, numTiles, wallSize):
-        super().__init__(windowSize, numTiles, wallSize)
+        Board.__init__(self, windowSize, numTiles, wallSize)
+        Graph.__init__(self)
         self._state = self.State.init
     
+    def vertexToDirs(self, v1):
+        dirs = []
+        for v2 in self._graph_dict[v1]:
+            if (v1 - self._numTiles[0]) == v2:
+                dirs.append(Direction.up)
+            elif (v1 + 1) == v2:
+                dirs.append(Direction.right)
+            elif (v1 + self._numTiles[0]) == v2:
+                dirs.append(Direction.down)
+            elif (v1 - 1) == v2:
+                dirs.append(Direction.left)
+        return dirs
+
     def on_event(self, event):
         if(event.type == pygame.KEYDOWN):
             if event.key == pygame.K_SPACE:
                 if self._state == self.State.init:
                     self.generate()
-                    self._state = self.State.generated
                 elif self._state == self.State.generated:
                     self.solve()
-                    self._state = self.State.solved
                 elif self._state == self.State.solved:
                     pass
 
@@ -160,15 +202,17 @@ class Maze(Board, Graph):
 def DFSGen(self):
     print("generating")
 
-    self._nodes = self._numTiles[0]*self._numTiles[1]
-    self._edges = []
-    visited = [False for i in range(self._nodes)]  
+    numVertices = self._numTiles[0]*self._numTiles[1]
+    visited = [False for i in range(numVertices)]  
+    for v in range(numVertices):
+        self.add_vertex(v)
     stack = [] 
 
     stack.append(0)
     visited[0] = True  
 
     while(len(stack)):
+        self.on_loop()
         s = stack[-1]  
         stack.pop() 
 
@@ -177,14 +221,14 @@ def DFSGen(self):
         l = len(neighbors)
         
         if l == 0:
-            self.genTile(self.toXY(s), 100)
+            self.genTile(self.toXY(s), 0, self.vertexToDirs(s))
             continue
         
         stack.append(s)
         ns = neighbors[randint(0,l-1)]
 
-        #TODO: utilize graph super class, populate vertices and edges so we can correctly break down walls
-        self.genTile(self.toXY(s), 100)
+        self.add_edge((s, ns))
+        self.genTile(self.toXY(s), 10, self.vertexToDirs(s))
 
         visited[ns] = True
         stack.append(ns)
