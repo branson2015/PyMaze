@@ -1,8 +1,9 @@
 import pygame
+import time
 from pygame.locals import *
 from functools import wraps
 from enum import Enum
-from random import random
+from random import randint
 
 class Color(Enum):
     white = (255,255,255)
@@ -34,9 +35,9 @@ class GraphViz:
     def on_loop(self):
         for event in pygame.event.get():
             self.super_event(event)
-        self.on_render()
+        self.render()
 
-    def on_render(self):
+    def render(self):
         pygame.display.update()
 
     def on_cleanup(self):
@@ -77,7 +78,7 @@ class Board(GraphViz):
         self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
         self._wallSize = wallSize
 
-    def genTile(self, pos, paths=[]):
+    def genTile(self, pos, timeout, paths=[]):
         rect = pygame.Rect((self._wallSize[0] + pos[0]*self._tileSize[0], self._wallSize[1] + pos[1]*self._tileSize[1]), self._innerSize)
         rec2 = None
         self._display_surf.fill(Color.white.value, rect=rect)
@@ -91,6 +92,26 @@ class Board(GraphViz):
             elif path == Direction.left:
                 rec2 = rect.move(-self._wallSize[0]-1, 0)
             self._display_surf.fill(Color.white.value, rect=rec2)
+        self.render()
+        time.sleep(timeout/1000)
+    
+    def getNeighbors(self, s):
+        neighbors = []
+        if (s/self._numTiles[0] - 1) >= 0:
+            neighbors.append(s-self._numTiles[0])
+        if (s%self._numTiles[0] + 1) < self._numTiles[0]:
+            neighbors.append(s+1)
+        if (s/self._numTiles[0] + 1) < self._numTiles[1]:
+            neighbors.append(s+self._numTiles[0])
+        if (s%self._numTiles[0] - 1) >= 0:
+            neighbors.append(s-1)
+        return neighbors
+
+    def toXY(self, s):
+        return (int(s%self._numTiles[0]), int(s/self._numTiles[0]))
+
+    def toIndex(self, xy):
+        return xy[0]*self._numTiles[0] + xy[1]
 
     def on_event(self, event):
         pass
@@ -144,24 +165,30 @@ def DFSGen(self):
     visited = [False for i in range(self._nodes)]  
     stack = [] 
 
-    stack.append(0)  
+    stack.append(0)
+    visited[0] = True  
 
     while(len(stack)):
         s = stack[-1]  
         stack.pop() 
-        
-        neighbors = filter(lambda s: visited[s], [s + self._numTiles[0], s+1, s - self._numTiles[0], s-1]) #todo, need to bound this somehow
+
+        neighbors = self.getNeighbors(s)
+        neighbors = [x for x in neighbors if not visited[x]]
         l = len(neighbors)
         
-        if l > 0:
-            stack.append(s)
+        if l == 0:
+            self.genTile(self.toXY(s), 100)
+            continue
         
-        ns = neighbors[random()%l]
+        stack.append(s)
+        ns = neighbors[randint(0,l-1)]
 
-        #todo: knock down wall between ns and s
+        #TODO: utilize graph super class, populate vertices and edges so we can correctly break down walls
+        self.genTile(self.toXY(s), 100)
 
         visited[ns] = True
         stack.append(ns)
+    print("done")
 
 @solve(Maze)
 def DFS(self):
