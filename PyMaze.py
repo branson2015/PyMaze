@@ -8,6 +8,8 @@ from random import randint
 class Color(Enum):
     white = (255,255,255)
     black = (0,0,0)
+    purple= (255,0,255)
+    green = (0,255,0)
 
 class Direction(Enum):
     up    = 1
@@ -78,10 +80,10 @@ class Board(GraphViz):
         self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
         self._wallSize = wallSize
 
-    def genTile(self, pos, timeout, paths=[]):
+    def genTile(self, pos, paths, color=Color.white, timeout=0):
         rect = pygame.Rect((self._wallSize[0] + pos[0]*self._tileSize[0], self._wallSize[1] + pos[1]*self._tileSize[1]), self._innerSize)
         rec2 = None
-        self._display_surf.fill(Color.white.value, rect=rect)
+        self._display_surf.fill(color.value, rect=rect)
         for path in paths:
             if path == Direction.up:
                 rec2 = rect.move(0, -self._wallSize[1]-1)
@@ -91,7 +93,7 @@ class Board(GraphViz):
                 rec2 = rect.move(0, self._wallSize[1]+1)
             elif path == Direction.left:
                 rec2 = rect.move(-self._wallSize[0]-1, 0)
-            self._display_surf.fill(Color.white.value, rect=rec2)
+            self._display_surf.fill(color.value, rect=rec2)
         time.sleep(timeout/1000)
     
     def getNeighbors(self, s):
@@ -130,6 +132,9 @@ class Graph(object):
 
     def edges(self):
         return self._generate_edges()
+
+    def edge(self, vertex):
+        return self._graph_dict[vertex]
 
     def add_vertex(self, vertex):
         if vertex not in self._graph_dict:
@@ -188,6 +193,10 @@ class Maze(Board, Graph):
             if event.key == pygame.K_SPACE:
                 if self._state == self.State.init:
                     self.generate()
+                    self._state = self.State.generated
+                elif self._state == self.State.generating:
+                    pass
+                    #pause
                 elif self._state == self.State.generated:
                     self.solve()
                 elif self._state == self.State.solved:
@@ -221,14 +230,14 @@ def DFSGen(self):
         l = len(neighbors)
         
         if l == 0:
-            self.genTile(self.toXY(s), 0, self.vertexToDirs(s))
+            self.genTile(self.toXY(s), self.vertexToDirs(s))
             continue
         
         stack.append(s)
         ns = neighbors[randint(0,l-1)]
 
         self.add_edge((s, ns))
-        self.genTile(self.toXY(s), 10, self.vertexToDirs(s))
+        self.genTile(self.toXY(s), self.vertexToDirs(s))
 
         visited[ns] = True
         stack.append(ns)
@@ -238,23 +247,29 @@ def DFSGen(self):
 def DFS(self):
     print("solving")
 
-    visited = [False for i in range(self._nodes)]  
+    l = len(self.vertices())
+    visited = [False for i in range(l)]  
     stack = [] 
 
     stack.append(0)  
 
     while(len(stack)):
+        self.on_loop()
         s = stack[-1]  
         stack.pop() 
 
         if (not visited[s]):  
             visited[s] = True 
+            self.genTile(self.toXY(s), self.vertexToDirs(s), Color.purple)
+        
+        if(s == l-1):
+            break
 
-        for node in self._edges[s]:  
-            if (not visited[node]):  
-                stack.append(node)  
+        for v2 in self.edge(s):  
+            if (not visited[v2]):  
+                stack.append(v2)  
                 
-
+    print("done")
 
 
 
@@ -263,5 +278,5 @@ def DFS(self):
 
 
 if __name__ == "__main__":
-    app = Maze((800, 600), (13,10), (5,5)) #add in border?
+    app = Maze((800, 600), (130,100), (1,1)) #add in border?
     app.start()
