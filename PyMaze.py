@@ -5,6 +5,17 @@ from functools import wraps
 from enum import Enum
 from random import randint
 
+#TODO: come up with better decorator pattern to automate on_loop function call to make implementing algorithms more efficient
+#make sure it doesn't override the OBJECT, just the INSTANCE.
+#
+#Implement the following solving algorithms and try and also convert them to be generation algorithms:
+#BFS
+#floyd-warshall
+#dijkstra
+#a*
+#bellman-ford
+
+
 class Color(Enum):
     white = (255,255,255)
     black = (0,0,0)
@@ -121,6 +132,7 @@ class Board(GraphViz):
     def solve(self):
         pass
 
+#holds the vertices and edges
 class Graph(object):
     def __init__(self, graph_dict=None):
         if graph_dict == None:
@@ -169,11 +181,13 @@ class Maze(Board, Graph):
         solving = 3
         solved = 4
         
-
     def __init__(self, windowSize, numTiles, wallSize):
         Board.__init__(self, windowSize, numTiles, wallSize)
         Graph.__init__(self)
         self._state = self.State.init
+        self._numVertices = numTiles[0]*numTiles[1]
+        for v in range(self._numVertices):
+            self.add_vertex(v)
     
     def vertexToDirs(self, v1):
         dirs = []
@@ -207,14 +221,9 @@ class Maze(Board, Graph):
 ###--- algorithms section ---###
 
 
-@generate(Maze)
+'''@generate(Maze)
 def DFSGen(self):
-    print("generating")
-
-    numVertices = self._numTiles[0]*self._numTiles[1]
-    visited = [False for i in range(numVertices)]  
-    for v in range(numVertices):
-        self.add_vertex(v)
+    visited = [False]*self._numVertices
     stack = [] 
 
     stack.append(0)
@@ -222,8 +231,7 @@ def DFSGen(self):
 
     while(len(stack)):
         self.on_loop()
-        s = stack[-1]  
-        stack.pop() 
+        s = stack.pop() 
 
         neighbors = self.getNeighbors(s)
         neighbors = [x for x in neighbors if not visited[x]]
@@ -241,14 +249,13 @@ def DFSGen(self):
 
         visited[ns] = True
         stack.append(ns)
-    print("done")
+'''
 
+'''
 @solve(Maze)
 def DFS(self):
-    print("solving")
-
     start = 0
-    end = len(self.vertices())-1
+    end = self._numVertices-1
     path = None
 
     visited = set()
@@ -269,14 +276,64 @@ def DFS(self):
             if v2 not in visited:  
                 stack.append((v2, p+[v2]))  
                 
-    print(path)
     for v in path:
         self.genTile(self.toXY(v), self.vertexToDirs(v), Color.green)
-    
-    print("done")
+'''
 
+@generate(Maze)
+def BFSGen(self):
 
+    visited = [False]*self._numVertices
+    queue = [0]
+    visited[0] = True
 
+    while queue:
+        self.on_loop()
+        s = queue.pop(0)
+
+        neighbors = self.getNeighbors(s)
+        neighbors = [x for x in neighbors if not visited[x]]
+        l = len(neighbors)
+        
+        if l == 0:
+            self.genTile(self.toXY(s), self.vertexToDirs(s))
+            continue
+        
+        queue.append(s)
+        ns = neighbors[randint(0,l-1)]
+
+        self.add_edge((s, ns))
+        self.genTile(self.toXY(s), self.vertexToDirs(s))
+
+        visited[ns] = True
+        queue.append(ns)
+
+@solve(Maze)
+def BFS(self):
+    start = 0
+    end = self._numVertices-1
+    path = None
+
+    visited = set()
+    queue = [(0, [0])]   
+
+    while queue:
+        self.on_loop()
+        (v1,p) = queue.pop(0) 
+
+        if v1 not in visited:  
+            if v1 == end:
+                path = p
+                break
+            visited.add(v1) 
+            self.genTile(self.toXY(v1), self.vertexToDirs(v1), Color.purple)
+
+        for v2 in self.edge(v1):  
+            if v2 not in visited:  
+                queue.append((v2, p+[v2]))  
+                
+    for v in path:
+        self.genTile(self.toXY(v), self.vertexToDirs(v), Color.green)
 
 
 
