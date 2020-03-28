@@ -247,28 +247,32 @@ def DFSGen(self):
 def DFS(self):
     print("solving")
 
-    l = len(self.vertices())
-    visited = [False for i in range(l)]  
-    stack = [] 
+    start = 0
+    end = len(self.vertices())-1
+    path = None
 
-    stack.append(0)  
+    visited = set()
+    stack = [(0, [0])]   
 
-    while(len(stack)):
+    while stack:
         self.on_loop()
-        s = stack[-1]  
-        stack.pop() 
+        (v1,p) = stack.pop() 
 
-        if (not visited[s]):  
-            visited[s] = True 
-            self.genTile(self.toXY(s), self.vertexToDirs(s), Color.purple)
-        
-        if(s == l-1):
-            break
+        if v1 not in visited:  
+            if v1 == end:
+                path = p
+                break
+            visited.add(v1) 
+            self.genTile(self.toXY(v1), self.vertexToDirs(v1), Color.purple)
 
-        for v2 in self.edge(s):  
-            if (not visited[v2]):  
-                stack.append(v2)  
+        for v2 in self.edge(v1):  
+            if v2 not in visited:  
+                stack.append((v2, p+[v2]))  
                 
+    print(path)
+    for v in path:
+        self.genTile(self.toXY(v), self.vertexToDirs(v), Color.green)
+    
     print("done")
 
 
