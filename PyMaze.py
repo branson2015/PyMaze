@@ -4,12 +4,11 @@ from pygame.locals import *
 from functools import wraps
 from enum import Enum
 from random import randint
+from collections import defaultdict
 
-#TODO: come up with better decorator pattern to automate on_loop function call to make implementing algorithms more efficient
-#make sure it doesn't override the OBJECT, just the INSTANCE.
-#
 #Implement the following solving algorithms and try and also convert them to be generation algorithms:
-#BFS
+#DFS                - generating and solving done
+#BFS                - generating and solving done
 #floyd-warshall
 #dijkstra
 #a*
@@ -57,29 +56,10 @@ class GraphViz:
         pygame.quit()
 
     def start(self):
+        self._running = True
+
         while(self._running):
             self.on_loop()
-        self.on_cleanup()
-
-
-#decorator to make incorporating graph algorithms into the class easier
-def add_method(cls, fnName):
-    def decorator(func):
-        @wraps(func) 
-        def wrapper(self, *args, **kwargs): 
-            return func(self, *args, **kwargs)
-        setattr(cls, fnName, wrapper)
-        return func
-    return decorator
-
-#decorator to make generating mazes easier
-def generate(cls):
-    return add_method(cls, 'generate')
-
-#decorator to make solving mazes easier
-def solve(cls):
-    return add_method(cls, 'solve')
-
 
 
 #width x height board w/ drawing functions
@@ -188,6 +168,9 @@ class Maze(Board, Graph):
         self._numVertices = numTiles[0]*numTiles[1]
         for v in range(self._numVertices):
             self.add_vertex(v)
+
+        self.genAlg = None
+        self.solveAlg = None
     
     def vertexToDirs(self, v1):
         dirs = []
@@ -206,23 +189,75 @@ class Maze(Board, Graph):
         if(event.type == pygame.KEYDOWN):
             if event.key == pygame.K_SPACE:
                 if self._state == self.State.init:
-                    self.generate()
+                    self._display_surf.fill(Color.black.value)
+                    self.genAlg(self)
                     self._state = self.State.generated
                 elif self._state == self.State.generating:
                     pass
                     #pause
                 elif self._state == self.State.generated:
-                    self.solve()
+                    self.solveAlg(self)
+                    self._state = self.State.solved
                 elif self._state == self.State.solved:
-                    pass
-
-
+                    self._state = self.State.init
+                    Graph.__init__(self)
+                    self._running = False
     
+    def selectAlg(self, prompt, mode):
+        algs = self.genAlgs if mode == "generate" else self.solveAlgs
+
+        prompt += " ("
+        for i, alg in enumerate(algs):
+            if i != 0:
+                prompt += " | "
+            prompt += alg
+        prompt += ")\n"
+
+        val = None
+        while val == None:
+            val = algs[input(prompt)]
+        
+        if mode == "generate":
+            self.genAlg = val
+        elif mode == "solve":
+            self.solveAlg = val
+
+
+#decorator to make incorporating graph algorithms into the class easier
+def add_method(cls, attr):
+    def decorator(func):
+        @wraps(func) 
+        def wrapper(self, *args, **kwargs): 
+            return func(self, *args, **kwargs)
+        exists = getattr(cls, attr, None)
+        if exists is None:
+            setattr(cls, attr, defaultdict(lambda: None))
+        getattr(cls, attr)[func.__name__] = func
+        return func
+    return decorator
+
+#decorator to make generating mazes easier
+def generate():
+    return add_method(Maze, 'genAlgs')
+
+#decorator to make solving mazes easier
+def solve():
+    return add_method(Maze, 'solveAlgs')
+
+
+
+
+
+
 ###--- algorithms section ---###
 
 
-'''@generate(Maze)
-def DFSGen(self):
+
+
+
+
+@generate()
+def DFS(self):
     visited = [False]*self._numVertices
     stack = [] 
 
@@ -249,10 +284,10 @@ def DFSGen(self):
 
         visited[ns] = True
         stack.append(ns)
-'''
 
-'''
-@solve(Maze)
+
+
+@solve()
 def DFS(self):
     start = 0
     end = self._numVertices-1
@@ -278,11 +313,10 @@ def DFS(self):
                 
     for v in path:
         self.genTile(self.toXY(v), self.vertexToDirs(v), Color.green)
-'''
 
-@generate(Maze)
-def BFSGen(self):
 
+@generate()
+def BFS(self):
     visited = [False]*self._numVertices
     queue = [0]
     visited[0] = True
@@ -308,7 +342,7 @@ def BFSGen(self):
         visited[ns] = True
         queue.append(ns)
 
-@solve(Maze)
+@solve()
 def BFS(self):
     start = 0
     end = self._numVertices-1
@@ -338,6 +372,19 @@ def BFS(self):
 
 
 
+
+
+
+
+
 if __name__ == "__main__":
-    app = Maze((800, 600), (130,100), (1,1)) #add in border?
-    app.start()
+    app = Maze((800, 600), (130,100), (1,1))
+
+    while True:
+        app.selectAlg("Select Generation Algorithm:", "generate")
+        app.selectAlg("Select Solve Algorithm:", "solve")
+        app.start()
+        q = input("Quit? (y/n)\n")
+        if q == "y":
+            break
+    app.on_cleanup()
