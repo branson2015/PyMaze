@@ -1,18 +1,10 @@
 import pygame
 import time
+import math
 from pygame.locals import *
 from functools import wraps
 from enum import Enum
 from collections import defaultdict
-
-#Implement the following solving algorithms and try and also convert them to be generation algorithms:
-#DFS                - generating and solving done
-#BFS                - generating and solving done
-#floyd-warshall
-#dijkstra
-#a*
-#bellman-ford
-
 
 class Color(Enum):
     white = (255,255,255)
@@ -70,10 +62,10 @@ class Board(GraphViz):
         self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
         self._wallSize = wallSize
 
-    def genTile(self, pos, paths, color=Color.white, timeout=0):
+    def genTile(self, pos, paths, color=Color.white.value, timeout=0):
         rect = pygame.Rect((self._wallSize[0] + pos[0]*self._tileSize[0], self._wallSize[1] + pos[1]*self._tileSize[1]), self._innerSize)
         rec2 = None
-        self._display_surf.fill(color.value, rect=rect)
+        self._display_surf.fill(color, rect=rect)
         for path in paths:
             if path == Direction.up:
                 rec2 = rect.move(0, -self._wallSize[1]-1)
@@ -83,7 +75,8 @@ class Board(GraphViz):
                 rec2 = rect.move(0, self._wallSize[1]+1)
             elif path == Direction.left:
                 rec2 = rect.move(-self._wallSize[0]-1, 0)
-            self._display_surf.fill(color.value, rect=rec2)
+            self._display_surf.fill(color, rect=rec2)
+        self.on_loop()
         time.sleep(timeout/1000)
     
     def getNeighbors(self, s):
@@ -122,7 +115,10 @@ class Graph(object):
         return list(self._graph_dict.keys())
 
     def edges(self):
-        return self._generate_edges()
+        return self.generate_edges()
+    
+    def matrix(self):
+        return self.generate_matrix()
 
     def edge(self, vertex):
         return self._graph_dict[vertex]
@@ -143,13 +139,22 @@ class Graph(object):
         else:
             self._graph_dict[vertex2] = [vertex1]
 
-    def _generate_edges(self):
+    def generate_edges(self):
         edges = []
         for vertex in self._graph_dict:
             for neighbour in self._graph_dict[vertex]:
                 if {neighbour, vertex} not in edges:
                     edges.append({vertex, neighbour})
         return edges
+    
+    def generate_matrix(self):
+        matrix = [[math.inf]*len(self.vertices()) for i in range(len(self.vertices()))]
+        for vertex in self._graph_dict:
+            matrix[vertex][vertex] = 0
+            for neighbour in self._graph_dict[vertex]:
+                matrix[vertex][neighbour] = 1
+                matrix[neighbour][vertex] = 1
+        return matrix
 
 #Maze class, brings together graph and Board
 class Maze(Board, Graph):
@@ -195,7 +200,9 @@ class Maze(Board, Graph):
                     pass
                     #pause
                 elif self._state == self.State.generated:
-                    self.solveAlg(self)
+                    path = self.solveAlg(self)
+                    for v in path:
+                        self.genTile(self.toXY(v), self.vertexToDirs(v), Color.green.value)
                     self._state = self.State.solved
                 elif self._state == self.State.solved:
                     self._state = self.State.init
@@ -227,12 +234,14 @@ def add_method(cls, attr):
     def decorator(func):
         @wraps(func) 
         def wrapper(self, *args, **kwargs): 
-            return func(self, *args, **kwargs)
+            r = func(self, *args, **kwargs)
+            print("done")
+            return r
         exists = getattr(cls, attr, None)
         if exists is None:
             setattr(cls, attr, defaultdict(lambda: None))
-        getattr(cls, attr)[func.__name__] = func
-        return func
+        getattr(cls, attr)[func.__name__] = wrapper
+        return wrapper
     return decorator
 
 #decorator to make generating mazes easier

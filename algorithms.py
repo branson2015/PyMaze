@@ -1,8 +1,11 @@
 from PyMaze import Color, Direction, generate, solve
 from random import randint
+import math
+from collections import defaultdict
 
 '''
 Your function must take a single parameter - "self".
+Your function must return the solution path
 You must precede your function with either an @generate or @solve decorator.
 This will hook your function into the Maze & Graph classes for you.
 
@@ -42,6 +45,9 @@ The following functions are accessible to you through self:
 
         this function is to be used ONLY in @generate functions for defining the underlying graph that the maze is solved upon
 
+    self.edges():
+
+    self.matrix():
 
     VARIABLES
     _____________________________________________________________________________________________________________________________________________
@@ -50,6 +56,14 @@ The following functions are accessible to you through self:
 
     
 '''
+
+#Implement the following solving algorithms and try and also convert them to be generation algorithms:
+#DFS                - generating and solving done
+#BFS                - generating and solving done
+#floyd-warshall
+#dijkstra
+#a*
+#bellman-ford
 
 
 #############################################
@@ -66,7 +80,6 @@ def DFS(self):
     visited[0] = True  
 
     while(len(stack)):
-        self.on_loop()
         s = stack.pop() 
 
         neighbors = self.getNeighbors(s)
@@ -98,7 +111,6 @@ def DFS(self):
     stack = [(0, [0])]   
 
     while stack:
-        self.on_loop()
         (v1,p) = stack.pop() 
 
         if v1 not in visited:  
@@ -106,14 +118,13 @@ def DFS(self):
                 path = p
                 break
             visited.add(v1) 
-            self.genTile(self.toXY(v1), self.vertexToDirs(v1), Color.purple)
+            self.genTile(self.toXY(v1), self.vertexToDirs(v1), Color.purple.value)
 
         for v2 in self.edge(v1):  
             if v2 not in visited:  
                 stack.append((v2, p+[v2]))  
                 
-    for v in path:
-        self.genTile(self.toXY(v), self.vertexToDirs(v), Color.green)
+    return path
 
 
 
@@ -129,7 +140,6 @@ def BFS(self):
     visited[0] = True
 
     while queue:
-        self.on_loop()
         s = queue.pop(0)
 
         neighbors = self.getNeighbors(s)
@@ -159,7 +169,6 @@ def BFS(self):
     queue = [(0, [0])]   
 
     while queue:
-        self.on_loop()
         (v1,p) = queue.pop(0) 
 
         if v1 not in visited:  
@@ -167,14 +176,52 @@ def BFS(self):
                 path = p
                 break
             visited.add(v1) 
-            self.genTile(self.toXY(v1), self.vertexToDirs(v1), Color.purple)
+            self.genTile(self.toXY(v1), self.vertexToDirs(v1), Color.purple.value)
 
         for v2 in self.edge(v1):  
             if v2 not in visited:  
                 queue.append((v2, p+[v2]))  
                 
-    for v in path:
-        self.genTile(self.toXY(v), self.vertexToDirs(v), Color.green)
+    return path
+
+
+#############################################
+#########------floyd_Warshall-------#########
+#############################################
+
+@solve()
+def floydWarshall(self): 
+    Next = defaultdict(lambda: defaultdict(lambda: None))
+    dist = list(map(lambda i : list(map(lambda j : j , i)), self.matrix()))
+
+    for (u, v) in self.edges():
+        Next[u][v] = v
+        Next[v][u] = u
+    
+    for v in range(self._numVertices):
+        Next[v][v] = v
+
+    maxVal = 1
+    for k in range(self._numVertices):  
+        for i in range(self._numVertices): 
+            for j in range(self._numVertices):  
+                if dist[i][j] > dist[i][k] + dist[k][j]:
+                    dist[i][j] = dist[i][k] + dist[k][j]
+                    Next[i][j] = Next[i][k]
+                    val = int(dist[i][j]/maxVal) if dist[i][j] is not math.inf else 0
+                    maxVal = max(maxVal, val)
+                    val /= maxVal
+                    self.genTile(self.toXY(j), self.vertexToDirs(j), (255,255-255*val,255-255*val))
+
+    #path reconstruction to display result
+    path = [0]
+    u = 0
+    v = self._numVertices-1
+    while u != v:
+        u = Next[u][v]
+        path.append(u)
+    
+    return path
 
 
 
