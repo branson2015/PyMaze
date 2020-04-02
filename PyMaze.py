@@ -10,7 +10,10 @@ class Color(Enum):
     white = (255,255,255)
     black = (0,0,0)
     purple= (255,0,255)
+    red   = (255,0,0)
+    blue  = (0,0,255)
     green = (0,255,0)
+    
 
 class Direction(Enum):
     up    = 1
@@ -62,7 +65,9 @@ class Board(GraphViz):
         self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
         self._wallSize = wallSize
 
-    def genTile(self, pos, paths, color=Color.white.value, timeout=0):
+    def genTile(self, pos, color=Color.white.value, timeout=0):
+        paths = self.vertexToDirs(pos)
+        pos = self.toXY(pos)
         rect = pygame.Rect((self._wallSize[0] + pos[0]*self._tileSize[0], self._wallSize[1] + pos[1]*self._tileSize[1]), self._innerSize)
         rec2 = None
         self._display_surf.fill(color, rect=rect)
@@ -202,7 +207,7 @@ class Maze(Board, Graph):
                 elif self._state == self.State.generated:
                     path = self.solveAlg(self)
                     for v in path:
-                        self.genTile(self.toXY(v), self.vertexToDirs(v), Color.green.value)
+                        self.genTile(v, Color.green.value)
                     self._state = self.State.solved
                 elif self._state == self.State.solved:
                     self._state = self.State.init

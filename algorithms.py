@@ -60,7 +60,7 @@ The following functions are accessible to you through self:
 #Implement the following solving algorithms and try and also convert them to be generation algorithms:
 #DFS                - generating and solving done
 #BFS                - generating and solving done
-#floyd-warshall
+#floyd-warshall     - solving done
 #dijkstra
 #a*
 #bellman-ford
@@ -87,14 +87,14 @@ def DFS(self):
         l = len(neighbors)
         
         if l == 0:
-            self.genTile(self.toXY(s), self.vertexToDirs(s))
+            self.genTile(s)
             continue
         
         stack.append(s)
         ns = neighbors[randint(0,l-1)]
 
         self.add_edge((s, ns))
-        self.genTile(self.toXY(s), self.vertexToDirs(s))
+        self.genTile(s)
 
         visited[ns] = True
         stack.append(ns)
@@ -118,7 +118,7 @@ def DFS(self):
                 path = p
                 break
             visited.add(v1) 
-            self.genTile(self.toXY(v1), self.vertexToDirs(v1), Color.purple.value)
+            self.genTile(v1, Color.red.value)
 
         for v2 in self.edge(v1):  
             if v2 not in visited:  
@@ -147,14 +147,14 @@ def BFS(self):
         l = len(neighbors)
         
         if l == 0:
-            self.genTile(self.toXY(s), self.vertexToDirs(s))
+            self.genTile(s)
             continue
         
         queue.append(s)
         ns = neighbors[randint(0,l-1)]
 
         self.add_edge((s, ns))
-        self.genTile(self.toXY(s), self.vertexToDirs(s))
+        self.genTile(s)
 
         visited[ns] = True
         queue.append(ns)
@@ -176,7 +176,7 @@ def BFS(self):
                 path = p
                 break
             visited.add(v1) 
-            self.genTile(self.toXY(v1), self.vertexToDirs(v1), Color.purple.value)
+            self.genTile(v1, Color.red.value)
 
         for v2 in self.edge(v1):  
             if v2 not in visited:  
@@ -190,7 +190,7 @@ def BFS(self):
 #############################################
 
 @solve()
-def floydWarshall(self): 
+def FloydWarshall(self): 
     Next = defaultdict(lambda: defaultdict(lambda: None))
     dist = list(map(lambda i : list(map(lambda j : j , i)), self.matrix()))
 
@@ -211,7 +211,7 @@ def floydWarshall(self):
                     val = int(dist[i][j]/maxVal) if dist[i][j] is not math.inf else 0
                     maxVal = max(maxVal, val)
                     val /= maxVal
-                    self.genTile(self.toXY(j), self.vertexToDirs(j), (255,255-255*val,255-255*val))
+                    self.genTile(j, (255,255-255*val,255-255*val))
 
     #path reconstruction to display result
     path = [0]
@@ -224,4 +224,48 @@ def floydWarshall(self):
     return path
 
 
+#############################################
+#########---------Dijkstra----------#########
+#############################################
 
+
+@solve()
+def Dijkstra(self):
+    
+    Q = set()
+    dist = []
+    prev = []
+
+    start = 0
+    end = self._numVertices-1
+
+    for v in range(self._numVertices):
+        dist.append(math.inf)
+        prev.append(None)
+        Q.add(v)
+    dist[start] = 0
+
+    while Q:
+        u = min(Q, key=lambda v: dist[v])
+        Q.remove(u)
+
+        if u == end:
+            break
+        
+        maxVal = 1
+        for v in self.edge(u):
+            alt = dist[u] + 1
+            if alt < dist[v]:
+                dist[v] = alt
+                prev[v] = u
+                maxVal = max(maxVal, alt)
+                val = alt/maxVal
+                self.genTile(v, (255,255-255*val,255-255*val))
+
+    path = []
+    u = end
+    while u:
+        path.insert(0, u)
+        u = prev[u]
+    path.insert(0, 0)
+    return path
