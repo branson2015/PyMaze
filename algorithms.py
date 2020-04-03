@@ -1,8 +1,7 @@
-from PyMaze import Color, Direction, generate, solve
+from PyMaze import Color, Direction, Directions, generate, solve
 from random import randint
 import math
 from collections import defaultdict
-
 '''
 Your function must take a single parameter - "self".
 Your function must return the solution path
@@ -61,14 +60,30 @@ The following functions are accessible to you through self:
 #DFS                - generating and solving done
 #BFS                - generating and solving done
 #floyd-warshall     - solving done
-#dijkstra
-#a*
+#dijkstra           - solving done
+#a*                 - solving done
 #bellman-ford
 
 
 #############################################
 #########-----------DFS-------------#########
 #############################################
+def rngBreakWalls(self, count):
+    for i in range(count):
+        v = randint(0, self._numVertices-1)
+        newEdges = list(Directions - self.vertexToDirs(v))
+        e = None
+        if len(newEdges) == 0:
+            continue
+        elif len(newEdges) == 1:
+            e = newEdges[0]
+        else:
+            e = newEdges[randint(0, len(newEdges)-1)]
+        v2 = self.dirToIndex(v, e)
+        if v2:
+            self.add_edge((v, v2))
+            self.genTile(v)
+
 
 
 @generate()
@@ -99,6 +114,11 @@ def DFS(self):
         visited[ns] = True
         stack.append(ns)
 
+dfs = DFS
+@generate()
+def DFSplus(self):
+    dfs(self)
+    rngBreakWalls(self, int(self._numVertices/20))
 
 
 @solve()
@@ -158,6 +178,12 @@ def BFS(self):
 
         visited[ns] = True
         queue.append(ns)
+
+bfs = BFS
+@generate()
+def BFSplus(self):
+    bfs(self)
+    rngBreakWalls(self, int(self._numVertices/20))
 
 @solve()
 def BFS(self):
@@ -269,3 +295,55 @@ def Dijkstra(self):
         u = prev[u]
     path.insert(0, 0)
     return path
+
+
+
+
+
+
+#############################################
+#########------------A*-------------#########
+#############################################
+
+@solve()
+def A_star(self):
+    start = 0
+    end = self._numVertices-1
+
+    def h(v):
+        v = self.toXY(v)
+        g = self.toXY(end)
+        return (g[0]-v[0]) + (g[1]-v[1])
+
+    openSet = set([start])
+    closeSet = set()
+
+    cameFrom = {}
+
+    gscore = defaultdict(lambda: math.inf)
+    gscore[start] = 0
+
+    fscore = defaultdict(lambda: math.inf)
+    fscore[start] = h(start)
+
+    while openSet:
+        current = min(openSet, key=lambda x:fscore.get(x))
+        if current == end:
+                path = [current]
+                while current in cameFrom.keys():
+                    current = cameFrom[current]
+                    path.insert(0, current)
+                return path
+
+        closeSet.add(current)
+        openSet.remove(current)
+        self.genTile(current, Color.red.value)
+
+        for neighbor in self.edge(current):
+            tentative_gScore = gscore[current] + 1  #assume each has edge weight of 1
+            if tentative_gScore < gscore[neighbor]:
+                cameFrom[neighbor] = current
+                gscore[neighbor] = tentative_gScore
+                fscore[neighbor] = gscore[neighbor] + h(neighbor)
+                if neighbor not in closeSet:
+                    openSet.add(neighbor)

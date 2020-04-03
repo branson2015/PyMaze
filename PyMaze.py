@@ -20,6 +20,7 @@ class Direction(Enum):
     right = 2
     down  = 3
     left  = 4
+Directions = set([x for x in Direction])
 
 #wrapper around pygame for easier interfacing
 class GraphViz:
@@ -182,18 +183,28 @@ class Maze(Board, Graph):
         self.solveAlg = None
     
     def vertexToDirs(self, v1):
-        dirs = []
+        dirs = set()
         for v2 in self._graph_dict[v1]:
             if (v1 - self._numTiles[0]) == v2:
-                dirs.append(Direction.up)
+                dirs.add(Direction.up)
             elif (v1 + 1) == v2:
-                dirs.append(Direction.right)
+                dirs.add(Direction.right)
             elif (v1 + self._numTiles[0]) == v2:
-                dirs.append(Direction.down)
+                dirs.add(Direction.down)
             elif (v1 - 1) == v2:
-                dirs.append(Direction.left)
+                dirs.add(Direction.left)
         return dirs
 
+    def dirToIndex(self, v, dir):
+        if dir == Direction.up:
+            return v - self._numTiles[0] if v - self._numTiles[0] >= 0 else None
+        elif dir == Direction.right:
+            return v + 1 if v%self._numTiles[0] + 1 < self._numTiles[0] else None
+        elif dir == Direction.down:
+            return v + self._numTiles[0] if v + self._numTiles[0] < self._numVertices else None
+        elif dir == Direction.left:
+            return v - 1 if v%self._numTiles[0] - 1 >= 0 else None
+            
     def on_event(self, event):
         if(event.type == pygame.KEYDOWN):
             if event.key == pygame.K_SPACE:
