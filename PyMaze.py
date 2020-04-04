@@ -186,6 +186,8 @@ class Maze(Board, Graph):
     
     def vertexToDirs(self, v1):
         dirs = set()
+        if v1 not in self._graph_dict:
+            return dirs
         for v2 in self._graph_dict[v1]:
             if (v1 - self._numTiles[0]) == v2:
                 dirs.add(Direction.up)

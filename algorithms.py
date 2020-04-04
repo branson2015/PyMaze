@@ -62,7 +62,7 @@ The following functions are accessible to you through self:
 #floyd-warshall     - solving done
 #dijkstra           - solving done
 #a*                 - solving done
-#bellman-ford
+#bellman-ford       - solving done
 
 
 
@@ -214,6 +214,50 @@ def BFS(self):
                 queue.append((v2, p+[v2]))  
                 
     return path
+
+#############################################
+#########----------Wilsons----------#########
+#############################################
+@generate()
+def Wilsons(self):
+    start = 0
+    self.genTile(start)
+
+    notInMaze = [i for i in range(self._numVertices)]
+    notInMaze.remove(start)
+
+    s = notInMaze[randint(0, len(notInMaze)-1)]
+    
+    walk = [s]
+    while notInMaze:
+        self.genTile(s)
+    
+        neighbors = self.getNeighbors(s)
+        l = len(neighbors)
+        ns = neighbors[randint(0,l-1)]
+
+        if ns not in walk:
+            self.add_edge((s, ns))
+            walk.append(ns)
+        
+        if ns in notInMaze:
+            s = ns
+        else:
+            notInMaze = [x for x in notInMaze if x not in walk]
+            self.genTile(s)
+            self.genTile(ns)
+            if len(notInMaze) == 0:    
+                break
+            s = notInMaze[randint(0, len(notInMaze)-1)]
+            walk = [s]
+
+
+        
+            
+        
+
+
+
 
 
 #############################################
