@@ -65,9 +65,7 @@ The following functions are accessible to you through self:
 #bellman-ford
 
 
-#############################################
-#########-----------DFS-------------#########
-#############################################
+
 def rngBreakWalls(self, count):
     for i in range(count):
         v = randint(0, self._numVertices-1)
@@ -83,6 +81,13 @@ def rngBreakWalls(self, count):
         if v2:
             self.add_edge((v, v2))
             self.genTile(v)
+
+
+#############################################
+#########-----------DFS-------------#########
+#############################################
+
+
 
 
 
@@ -229,6 +234,7 @@ def FloydWarshall(self):
 
     maxVal = 1
     for k in range(self._numVertices):  
+        updates = {}
         for i in range(self._numVertices): 
             for j in range(self._numVertices):  
                 if dist[i][j] > dist[i][k] + dist[k][j]:
@@ -237,7 +243,9 @@ def FloydWarshall(self):
                     val = int(dist[i][j]/maxVal) if dist[i][j] is not math.inf else 0
                     maxVal = max(maxVal, val)
                     val /= maxVal
-                    self.genTile(j, (255,255-255*val,255-255*val))
+                    updates[j] = val
+        for j in updates:
+            self.genTile(j, (255,255-255*val,255-255*val))
 
     #path reconstruction to display result
     path = [0]
@@ -246,7 +254,6 @@ def FloydWarshall(self):
     while u != v:
         u = Next[u][v]
         path.append(u)
-    
     return path
 
 
@@ -293,7 +300,7 @@ def Dijkstra(self):
     while u:
         path.insert(0, u)
         u = prev[u]
-    path.insert(0, 0)
+    path.insert(0, start)
     return path
 
 
@@ -347,3 +354,50 @@ def A_star(self):
                 fscore[neighbor] = gscore[neighbor] + h(neighbor)
                 if neighbor not in closeSet:
                     openSet.add(neighbor)
+
+
+#############################################
+#########-------Bellman-Ford--------#########
+#############################################
+
+@solve()
+def BellmanFord(self):
+
+    start = 0
+    end = self._numVertices-1
+
+    dist = [math.inf]*self._numVertices
+    prev = [None]*self._numVertices
+    dist[start] = 0
+
+    for i in range(self._numVertices-1): 
+        maxval = 1#
+        change = {}#
+        for u, v in self.edges():
+            if dist[u] + 1 < dist[v]: 
+                dist[v] = dist[u] + 1  
+                prev[v] = u
+                change[v] = dist[v]#
+                maxval = max(maxval, dist[v])#
+            elif dist[v] + 1 < dist[u]:
+                dist[u] = dist[v] + 1
+                prev[u] = v
+                change[u] = dist[u]#
+                maxval = max(maxval, dist[u])#
+        
+        for i in change.keys():#
+            val = min(change[i]/maxval*255,255)#
+            self.genTile(i, (val,0,0))#
+
+    #just a check, might not include in final result
+    for u, v in self.edges(): 
+        if dist[u] != math.inf and dist[u] + 1 < dist[v]:
+            return None
+                        
+    path = []
+    u = end
+    while u:
+        path.insert(0, u)
+        u = prev[u]
+    path.insert(0, start)
+    return path

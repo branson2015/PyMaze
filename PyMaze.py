@@ -66,8 +66,10 @@ class Board(GraphViz):
         self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
         self._wallSize = wallSize
 
-    def genTile(self, pos, color=Color.white.value, timeout=0):
-        paths = self.vertexToDirs(pos)
+    def genTile(self, pos, color=Color.white.value, timeout=0, dirs=None, skip=False):
+        if skip:
+            pass
+        paths = self.vertexToDirs(pos) if dirs == None else dirs
         pos = self.toXY(pos)
         rect = pygame.Rect((self._wallSize[0] + pos[0]*self._tileSize[0], self._wallSize[1] + pos[1]*self._tileSize[1]), self._innerSize)
         rec2 = None
@@ -195,6 +197,18 @@ class Maze(Board, Graph):
                 dirs.add(Direction.left)
         return dirs
 
+    def edgeToDir(self, v1, v2):
+        if (v1 - self._numTiles[0]) == v2:
+            return Direction.up
+        elif (v1 + 1) == v2:
+            return Direction.right
+        elif (v1 + self._numTiles[0]) == v2:
+            return Direction.down
+        elif (v1 - 1) == v2:
+            return Direction.left
+        else: 
+            return None
+
     def dirToIndex(self, v, dir):
         if dir == Direction.up:
             return v - self._numTiles[0] if v - self._numTiles[0] >= 0 else None
@@ -217,8 +231,11 @@ class Maze(Board, Graph):
                     #pause
                 elif self._state == self.State.generated:
                     path = self.solveAlg(self)
-                    for v in path:
-                        self.genTile(v, Color.green.value)
+                    vn = 1
+                    for v in range(0, len(path)-1):
+                        self.genTile(path[v], Color.green.value, dirs=[self.edgeToDir(path[v],path[vn])])
+                        vn += 1
+                    self.genTile(path[-1], Color.green.value)
                     self._state = self.State.solved
                 elif self._state == self.State.solved:
                     self._state = self.State.init
