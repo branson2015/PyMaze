@@ -57,12 +57,20 @@ The following functions are accessible to you through self:
 '''
 
 #Implement the following solving algorithms and try and also convert them to be generation algorithms:
-#DFS                - generating and solving done
-#BFS                - generating and solving done
+#Wilsons            - generating done
+#DFS/DFS+           - generating and solving done
+#BFS/BFS+           - generating and solving done
 #floyd-warshall     - solving done
 #dijkstra           - solving done
-#a*                 - solving done
+#A*                 - solving done
 #bellman-ford       - solving done
+#Kruskals
+#Prims
+
+#hunt and kill
+#Ellers
+#SideWinder
+#binary tree
 
 
 
@@ -86,9 +94,6 @@ def rngBreakWalls(self, count):
 #############################################
 #########-----------DFS-------------#########
 #############################################
-
-
-
 
 
 @generate()
@@ -152,8 +157,6 @@ def DFS(self):
     return path
 
 
-
-
 #############################################
 #########-----------BFS-------------#########
 #############################################
@@ -215,19 +218,67 @@ def BFS(self):
                 
     return path
 
+
+#############################################
+#########-------Hunt and Kill-------#########
+#############################################
+@generate()
+def HuntandKill(self):
+
+    start = 0
+
+    notVisited = [x for x in range(self._numVertices)]
+    notVisited.remove(start)
+    s = start
+
+    while(notVisited):
+
+        neighbors = self.getNeighbors(s)
+        neighbors = [x for x in neighbors if x in notVisited]
+        l = len(neighbors)
+        
+        if l == 0:
+            self.genTile(s)
+            for v in notVisited:
+                adjacentUsedNeighbors = [x for x in self.getNeighbors(v) if x not in notVisited]
+                if len(adjacentUsedNeighbors) > 0:
+                    s = v
+                    self.add_edge((s, adjacentUsedNeighbors[0]))
+                    self.genTile(s)
+                    break
+            notVisited.remove(s)
+            continue
+        
+        ns = neighbors[randint(0,l-1)]
+        notVisited.remove(ns)
+        self.add_edge((s, ns))
+        self.genTile(s)
+        s = ns
+
+
 #############################################
 #########----------Wilsons----------#########
 #############################################
 @generate()
 def Wilsons(self):
-    start = 0
-    self.genTile(start)
 
     notInMaze = [i for i in range(self._numVertices)]
+    
+    '''
+    leads to disjoint sets - need to manage that
+    gap = (10,10)
+    for i in range(0, self._numTiles[1], gap[1]):
+        for j in range(0, self._numTiles[0], gap[0]):
+            start = self.toIndex((i,j))
+            notInMaze.remove(start)
+            self.genTile(start)
+    '''
+
+    start = self.toIndex((int(self._numTiles[1]/2), int(self._numTiles[0]/2)))
     notInMaze.remove(start)
+    self.genTile(start)
 
     s = notInMaze[randint(0, len(notInMaze)-1)]
-    
     walk = [s]
     while notInMaze:
         self.genTile(s)
@@ -250,14 +301,6 @@ def Wilsons(self):
                 break
             s = notInMaze[randint(0, len(notInMaze)-1)]
             walk = [s]
-
-
-        
-            
-        
-
-
-
 
 
 #############################################
@@ -346,10 +389,6 @@ def Dijkstra(self):
         u = prev[u]
     path.insert(0, start)
     return path
-
-
-
-
 
 
 #############################################

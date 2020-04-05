@@ -2,7 +2,7 @@ import PyMaze
 import algorithms
 
 if __name__ == "__main__":
-    app = PyMaze.Maze((800, 600), (20,15), (1,1))
+    app = PyMaze.Maze((800, 600), (100,75), (1,1))
 
     while True:
         app.selectAlg("Select Generation Algorithm:", "generate")
