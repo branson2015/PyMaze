@@ -1,5 +1,5 @@
 from PyMaze import Color, Direction, Directions, generate, solve
-from random import randint
+from random import randint, sample
 import math
 from collections import defaultdict
 '''
@@ -65,7 +65,8 @@ The following functions are accessible to you through self:
 #A*                 - solving done
 #bellman-ford       - solving done
 #Kruskals
-#Prims
+#Prims              - solving done
+#Kruskal's          - TODO WIP - ETHAN
 
 #hunt and kill
 #Ellers
@@ -89,6 +90,37 @@ def rngBreakWalls(self, count):
         if v2:
             self.add_edge((v, v2))
             self.genTile(v)
+
+
+@generate()
+def PRIM(self):
+    """PRIM algorthihm"""
+    start_index = randint(0, self._numVertices - 1)
+    # start_index = 0
+    maze = {start_index}
+    frontier = set(self.getNeighbors(start_index))
+    self.genTile(start_index)
+
+    # while we haven't added all the cells into the set
+    while len(maze) != self._numVertices:
+
+        # grab random cell from the frontier set
+        random_cell = sample(frontier, 1)[0]
+        frontier.remove(random_cell)
+        # add cells not part of the maze
+        connections = set()
+        for open_cell in self.getNeighbors(random_cell):
+            if open_cell not in maze and open_cell not in frontier:
+                frontier.add(open_cell)
+            if open_cell in maze:
+                connections.add(open_cell)
+
+        # now pick a random part of the maze to connect to this random cell
+        random_maze_cell = sample(connections, 1)[0]
+        self.add_edge((random_cell, random_maze_cell))
+        self.genTile(random_cell)
+        maze.add(random_cell)
+
 
 
 #############################################
