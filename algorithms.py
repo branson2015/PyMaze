@@ -94,7 +94,7 @@ def rngBreakWalls(self, count):
 
 @generate()
 def PRIM(self):
-    """PRIM algorthihm"""
+    """PRIM algorithm"""
     start_index = randint(0, self._numVertices - 1)
     # start_index = 0
     maze = {start_index}
