@@ -1,7 +1,10 @@
 from PyMaze import Color, Direction, Directions, generate, solve
+from disjoint_set import DisjointSet
 from random import randint, sample
 import math
 from collections import defaultdict
+
+
 '''
 Your function must take a single parameter - "self".
 Your function must return the solution path
@@ -68,11 +71,19 @@ The following functions are accessible to you through self:
 #Prims              - solving done
 #Kruskal's          - TODO WIP - ETHAN
 
-#hunt and kill
-#Ellers
+#hunt and kill      - generating done
+#Ellers             - generating done
 #SideWinder
-#binary tree
+#aldous-broder
+#recursive
 
+#Dead Ends
+#Straightaways
+#Turns
+#Junctions
+#Crossroads
+
+#http://www.astrolog.org/labyrnth/algrithm.htm
 
 
 def rngBreakWalls(self, count):
@@ -93,7 +104,7 @@ def rngBreakWalls(self, count):
 
 
 @generate()
-def PRIM(self):
+def Prims(self):
     """PRIM algorithm"""
     start_index = randint(0, self._numVertices - 1)
     # start_index = 0
@@ -120,6 +131,68 @@ def PRIM(self):
         self.add_edge((random_cell, random_maze_cell))
         self.genTile(random_cell)
         maze.add(random_cell)
+
+
+
+#############################################
+#########----------Ellers-----------#########
+#############################################
+
+
+@generate()
+def Ellers(self):
+    Dset = DisjointSet(self._numTiles[0])
+    for i in range(self._numTiles[1]):
+        self.genTile(i*self._numTiles[0])
+        for j in range(1,self._numTiles[0]):
+            
+            if Dset.find(j) == Dset.find(j-1):
+                self.genTile(self.toIndex((j,i)))
+                continue
+
+            idx = self.toIndex((j,i))
+            shouldMerge = bool(randint(int(i == self._numTiles[1]-1),1))
+            if shouldMerge:
+                Dset.merge(j-1,j)
+                self.add_edge((idx-1,idx))
+            self.genTile(idx)
+
+        if i != self._numTiles[1]-1:
+            remainders = [i for i in range(self._numTiles[0])]
+
+            for idx,s in enumerate(Dset.Sets):
+                if s == None:
+                    continue
+
+                s = s.copy()
+                numDownward = randint(1,len(s))
+                for k in range(numDownward):
+                    c = randint(0,len(s)-1)
+                    cid = s[c]
+                    c1 = self.toIndex((s[c], i))
+                    c2 = self.toIndex((s[c], i+1))
+                    self.add_edge((c1,c2))
+                    self.genTile(c2)
+                    s.pop(c)
+                    remainders.remove(cid)
+            
+            #recreate the disjoint set with the correct set/cell locations
+            for r in remainders:
+                n = next((i for i,v in enumerate(Dset.Sets) if v == None))
+                Dset.Cells[r] = n
+                Dset.Sets[n] = [n]
+            Dset.Sets = [None]*self._numTiles[0]
+            for i,v in enumerate(Dset.Cells):
+                if Dset.Sets[v] == None:
+                    Dset.Sets[v] = [i]
+                if i not in Dset.Sets[v]:
+                    Dset.Sets[v].append(i)
+            
+
+                        
+
+            
+
 
 
 
@@ -285,6 +358,7 @@ def HuntandKill(self):
         notVisited.remove(ns)
         self.add_edge((s, ns))
         self.genTile(s)
+        self.genTile(ns)
         s = ns
 
 
@@ -306,7 +380,7 @@ def Wilsons(self):
             self.genTile(start)
     '''
 
-    start = self.toIndex((int(self._numTiles[1]/2), int(self._numTiles[0]/2)))
+    start = self.toIndex((int(self._numTiles[0]/2), int(self._numTiles[1]/2)))
     notInMaze.remove(start)
     self.genTile(start)
 
@@ -505,9 +579,9 @@ def BellmanFord(self):
             self.genTile(i, (val,0,0))#
 
     #just a check, might not include in final result
-    for u, v in self.edges(): 
-        if dist[u] != math.inf and dist[u] + 1 < dist[v]:
-            return None
+    #for u, v in self.edges(): 
+    #    if dist[u] != math.inf and dist[u] + 1 < dist[v]:
+    #        return None
                         
     path = []
     u = end

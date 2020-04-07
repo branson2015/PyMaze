@@ -103,7 +103,7 @@ class Board(GraphViz):
         return (int(s%self._numTiles[0]), int(s/self._numTiles[0]))
 
     def toIndex(self, xy):
-        return xy[0]*self._numTiles[0] + xy[1]
+        return xy[1]*self._numTiles[0] + xy[0]
 
     def on_event(self, event):
         pass
