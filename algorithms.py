@@ -69,6 +69,7 @@ The following functions are accessible to you through self:
 #bellman-ford       - solving done
 #Prims              - solving done
 #Kruskal's          - TODO WIP - ETHAN
+# Aldous-Broder     - generating done
 
 #hunt and kill      - generating done
 #Ellers             - generating done
@@ -94,6 +95,37 @@ def rngBreakWalls(self, count):
         if v2:
             self.add_edge((v, v2))
             self.genTile(v)
+
+
+
+#############################################
+#########-------Aldous-Broder-------#########
+#############################################
+
+@generate()
+def AB(self):
+    """Aldous-Broder"""
+    visited = [False] * self._numVertices
+    current_cell = randint(0, self._numVertices - 1)
+    self.genTile(current_cell)
+    total_visited = 0
+    while total_visited != self._numVertices:
+        neighbors = self.getNeighbors(current_cell)
+        next_cell = sample(neighbors, 1)[0]
+        if not visited[next_cell]:
+            self.add_edge((current_cell, next_cell))
+            # self.genTile(current_cell)
+            # need to generate the next cell as well for some reason.
+            self.genTile(next_cell)
+            visited[next_cell] = True
+            total_visited += 1
+        current_cell = next_cell
+
+
+
+#############################################
+#########----------Prims------------#########
+#############################################
 
 
 @generate()
