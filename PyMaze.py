@@ -60,15 +60,17 @@ class GraphViz:
 #width x height board w/ drawing functions
 class Board(GraphViz):
     def __init__(self, windowSize, numTiles, wallSize):
-        super().__init__(windowSize)
-        self._tileSize = (self.width/numTiles[0] - wallSize[0]/numTiles[0], self.height/numTiles[1] - wallSize[1]/numTiles[0])
+        if windowSize != None:
+            super().__init__(windowSize)
+            self.no_visuals = False
+            self._tileSize = (self.width/numTiles[0] - wallSize[0]/numTiles[0], self.height/numTiles[1] - wallSize[1]/numTiles[0])
+            self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
+            self._wallSize = wallSize
         self._numTiles = numTiles
-        self._innerSize = (self._tileSize[0] - wallSize[0], self._tileSize[1] - wallSize[1])
-        self._wallSize = wallSize
 
-    def genTile(self, pos, color=Color.white.value, timeout=0, dirs=None, skip=False):
-        if skip:
-            pass
+    def genTile(self, pos, color=Color.white.value, timeout=0, dirs=None):
+        if self.no_visuals:
+            return
         paths = self.vertexToDirs(pos) if dirs == None else dirs
         pos = self.toXY(pos)
         rect = pygame.Rect((self._wallSize[0] + pos[0]*self._tileSize[0], self._wallSize[1] + pos[1]*self._tileSize[1]), self._innerSize)
@@ -173,7 +175,7 @@ class Maze(Board, Graph):
         solving = 3
         solved = 4
         
-    def __init__(self, windowSize, numTiles, wallSize):
+    def __init__(self, windowSize, numTiles, wallSize=(1,1)):
         Board.__init__(self, windowSize, numTiles, wallSize)
         Graph.__init__(self)
         self._state = self.State.init
@@ -269,9 +271,7 @@ def add_method(cls, attr):
     def decorator(func):
         @wraps(func) 
         def wrapper(self, *args, **kwargs): 
-            r = func(self, *args, **kwargs)
-            print("done")
-            return r
+            return func(self, *args, **kwargs)
         exists = getattr(cls, attr, None)
         if exists is None:
             setattr(cls, attr, defaultdict(lambda: None))

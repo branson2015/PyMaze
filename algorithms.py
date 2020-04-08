@@ -67,7 +67,6 @@ The following functions are accessible to you through self:
 #dijkstra           - solving done
 #A*                 - solving done
 #bellman-ford       - solving done
-#Kruskals
 #Prims              - solving done
 #Kruskal's          - TODO WIP - ETHAN
 
@@ -76,12 +75,6 @@ The following functions are accessible to you through self:
 #SideWinder
 #aldous-broder
 #recursive
-
-#Dead Ends
-#Straightaways
-#Turns
-#Junctions
-#Crossroads
 
 #http://www.astrolog.org/labyrnth/algrithm.htm
 
