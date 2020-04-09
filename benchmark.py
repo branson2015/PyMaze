@@ -22,13 +22,12 @@ class Benchmark(Maze):
         self.no_visuals = True
 
     def benchmark_all(self):
-        benchmark_solve_all(gen=True)
+        self.benchmark_solve_all(gen=True)
 
     def benchmark(self, a, b):
         stats = self.benchmark_solve(a, b, True)
         print(stats)
 
-    
     def benchmark_solve_all(self, gen=False):
         for galg in self.genAlgs:
             for salg in self.solveAlgs:
@@ -56,7 +55,6 @@ class Benchmark(Maze):
         stats["solve"]["time"] = ttime
 
         return stats
-
 
     def benchmark_gen_all(self):
         for alg in self.genAlgs:
@@ -121,7 +119,7 @@ class Benchmark(Maze):
 
 def main():
     bm = Benchmark()
-    bm.benchmark("Ellers","A_star")
+    bm.benchmark("Ellers", "A_star")
 
 if __name__ == "__main__":
     main()

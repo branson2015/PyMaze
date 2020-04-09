@@ -180,6 +180,8 @@ class Maze(Board, Graph):
         Graph.__init__(self)
         self._state = self.State.init
         self._numVertices = numTiles[0]*numTiles[1]
+        self._rows = numTiles[0]
+        self._columns = numTiles[1]
         for v in range(self._numVertices):
             self.add_vertex(v)
 

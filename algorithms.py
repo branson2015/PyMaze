@@ -1,6 +1,6 @@
 from PyMaze import Color, Direction, Directions, generate, solve
 from disjoint_set import DisjointSet
-from random import randint, sample
+from random import randint, sample, random
 import math
 from collections import defaultdict
 
@@ -67,7 +67,7 @@ The following functions are accessible to you through self:
 #dijkstra           - solving done
 #A*                 - solving done
 #bellman-ford       - solving done
-#Prims              - solving done
+#Prims              - generating done
 #Kruskal's          - TODO WIP - ETHAN
 # Aldous-Broder     - generating done
 
@@ -96,6 +96,63 @@ def rngBreakWalls(self, count):
             self.add_edge((v, v2))
             self.genTile(v)
 
+
+#############################################
+#########---------Kruskals----------#########
+#############################################
+
+@generate()
+def KRU(self):
+    """Kruskal's Algorithm"""
+    Dset = DisjointSet(self._numVertices)
+
+    # Generate numbers that will act as a wall between two cells in a row
+    rows = set()
+    pre = .5
+    for i in range(self._columns):
+        for j in range(self._rows - 1):
+            rows.add(pre)
+            pre += 1
+        pre += 1
+
+    # Generate numbers that will act as a wall between two cells in a column
+    columns = set()
+    offset = self._rows / 2
+    pre = offset
+    for i in range(self._rows):
+        for j in range(self._columns - 1):
+            columns.add(pre)
+            pre += 1
+
+    while Dset.nsets != 1:
+        if random() < 0.5:
+            """Pick a random row"""
+            random_row_edge = sample(rows, 1)[0]
+            rows.remove(random_row_edge)
+
+            left_cell = int(random_row_edge - .5)
+            right_cell = int(random_row_edge + .5)
+            # If the left and right cell are not part of the same set merge them
+            if Dset.find(left_cell) != Dset.find(right_cell):
+                # print("Joining two rows: ", left_cell, right_cell)
+                Dset.merge(left_cell, right_cell)
+                self.add_edge((left_cell, right_cell))
+                self.genTile(left_cell)
+                self.genTile(right_cell)
+        else:
+            """Pick a random column"""
+            random_column_edge = sample(columns, 1)[0]
+            columns.remove(random_column_edge)
+
+            left_cell = int(random_column_edge - offset)
+            right_cell = int(random_column_edge + offset)
+            # If the top and bottom cell are not part of the same set merge them
+            if Dset.find(left_cell) != Dset.find(right_cell):
+                # print("Joining two columns: ", left_cell, right_cell)
+                Dset.merge(left_cell, right_cell)
+                self.add_edge((left_cell, right_cell))
+                self.genTile(left_cell)
+                self.genTile(right_cell)
 
 
 #############################################
