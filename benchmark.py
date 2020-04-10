@@ -1,6 +1,7 @@
 from PyMaze import *
 import algorithms
 import time
+import functools 
 
 #Dead Ends
 #Straightaways
@@ -17,8 +18,9 @@ import time
 #number of other stuff
 
 class Benchmark(Maze):
-    def __init__(self):
-        Maze.__init__(self, None, (100,100))
+    def __init__(self, sz=(100,100)):
+        self._sz = sz
+        Maze.__init__(self, None, sz)
         self.no_visuals = True
 
     def benchmark_all(self):
@@ -31,10 +33,10 @@ class Benchmark(Maze):
     def benchmark_solve_all(self, gen=False):
         for galg in self.genAlgs:
             for salg in self.solveAlgs:
-                self.__init__()
+                self.__init__(self._sz)
                 stats = self.benchmark_solve(galg, salg, gen)
                 print(galg, salg, stats)
-            self.__init__()
+            self.__init__(self._sz)
     
     def benchmark_solve(self, a, b, gen=False):
         stats = {}
@@ -56,12 +58,29 @@ class Benchmark(Maze):
 
         return stats
 
-    def benchmark_gen_all(self):
+    def benchmark_gen_all(self, n):
+        results = {}
         for alg in self.genAlgs:
-            self.__init__()
-            stats = self.benchmark_gen(alg)
-            print(alg, stats)
-        self.__init__()
+            self.__init__(self._sz)
+            results[alg] = self.benchmark_gen_n(alg, n)
+        self.__init__(self._sz)
+        return results
+
+    def benchmark_gen_n(self, a, n):
+        res = []
+        for i in range(n):
+            self.__init__(self._sz)
+            res.append(self.benchmark_gen(a))
+
+        totres = dict.fromkeys(res[0].keys())
+        for attrib in totres:
+            tot = 0
+            for r in res:
+                tot += r[attrib]
+            tot /= n
+            totres[attrib] = tot
+        
+        return totres
 
     def benchmark_gen(self, a):
         self.genAlg = self.genAlgs[a] if isinstance(a, str) else a
@@ -72,12 +91,15 @@ class Benchmark(Maze):
         
         stats = {}
         deadends, straights, turns, junctions, crossroads = self.calc_dirs()
-        stats["deadends"]       = deadends
-        stats["straightAways"]  = straights
-        stats["turns"]          = turns
-        stats["junctions"]      = junctions
-        stats["crossroads"]     = crossroads
+        tot = deadends+straights+turns+junctions+crossroads
+        stats["total"]          = tot
+        stats["deadends"]       = deadends/tot
+        stats["straightAways"]  = straights/tot
+        stats["turns"]          = turns/tot
+        stats["junctions"]      = junctions/tot
+        stats["crossroads"]     = crossroads/tot
         stats["time"]           = ttime
+        
 
         return stats
     
@@ -112,14 +134,10 @@ class Benchmark(Maze):
                 crossroadCount += 1
         return (deadendCount, straightCount, turnCount, junctionCount, crossroadCount)
 
-    
-
-
-
 
 def main():
     bm = Benchmark()
-    bm.benchmark("Ellers", "A_star")
+    print(bm.benchmark_gen_all(10))
 
 if __name__ == "__main__":
     main()

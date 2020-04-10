@@ -68,33 +68,14 @@ The following functions are accessible to you through self:
 #A*                 - solving done
 #bellman-ford       - solving done
 #Prims              - generating done
-#Kruskal's          - TODO WIP - ETHAN
+#Kruskal's          - generating done
 # Aldous-Broder     - generating done
 
 #hunt and kill      - generating done
 #Ellers             - generating done
 #SideWinder
-#aldous-broder
+#aldous-broder      - generating done
 #recursive
-
-#http://www.astrolog.org/labyrnth/algrithm.htm
-
-
-def rngBreakWalls(self, count):
-    for i in range(count):
-        v = randint(0, self._numVertices-1)
-        newEdges = list(Directions - self.vertexToDirs(v))
-        e = None
-        if len(newEdges) == 0:
-            continue
-        elif len(newEdges) == 1:
-            e = newEdges[0]
-        else:
-            e = newEdges[randint(0, len(newEdges)-1)]
-        v2 = self.dirToIndex(v, e)
-        if v2:
-            self.add_edge((v, v2))
-            self.genTile(v)
 
 
 #############################################
@@ -102,7 +83,7 @@ def rngBreakWalls(self, count):
 #############################################
 
 @generate()
-def KRU(self):
+def Kruskals(self):
     """Kruskal's Algorithm"""
     Dset = DisjointSet(self._numVertices)
 
@@ -160,7 +141,7 @@ def KRU(self):
 #############################################
 
 @generate()
-def AB(self):
+def Aldous_Broder(self):
     """Aldous-Broder"""
     visited = [False] * self._numVertices
     current_cell = randint(0, self._numVertices - 1)
@@ -269,13 +250,6 @@ def Ellers(self):
                     Dset.Sets[v] = [i]
                 if i not in Dset.Sets[v]:
                     Dset.Sets[v].append(i)
-            
-
-                        
-
-            
-
-
 
 
 #############################################
@@ -310,12 +284,6 @@ def DFS(self):
 
         visited[ns] = True
         stack.append(ns)
-
-dfs = DFS
-@generate()
-def DFSplus(self):
-    dfs(self)
-    rngBreakWalls(self, int(self._numVertices/20))
 
 
 @solve()
@@ -373,12 +341,6 @@ def BFS(self):
 
         visited[ns] = True
         queue.append(ns)
-
-bfs = BFS
-@generate()
-def BFSplus(self):
-    bfs(self)
-    rngBreakWalls(self, int(self._numVertices/20))
 
 @solve()
 def BFS(self):
@@ -589,6 +551,7 @@ def A_star(self):
     end = self._numVertices-1
 
     def h(v):
+        return 0
         v = self.toXY(v)
         g = self.toXY(end)
         return (g[0]-v[0]) + (g[1]-v[1])
